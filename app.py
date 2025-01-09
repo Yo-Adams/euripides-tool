@@ -8,16 +8,16 @@ openai.api_key = "sk-proj-T5jkFzxe078SJAsWmkeYID7sX8s6m13SkTId6rF-3FbaPBQ_z8q4ZI
 if "current_section" not in st.session_state:
     st.session_state["current_section"] = "welcome"
 if "conversation" not in st.session_state:
-    st.session_state["conversation"] = []  # Stores GPT conversation
+    st.session_state["conversation"] = []  # Stores conversation history
 if "user_profile" not in st.session_state:
     st.session_state["user_profile"] = {}  # Stores user responses
 
 # --- Welcome Section ---
 def welcome_section():
-    st.title("Welcome to Euripides!")
+    st.title("Euripides")
     st.subheader("Your personal Deus Ex Machina for crafting your digital presence.")
     st.markdown("""
-    Euripides is here to help you explore who you are and craft actionable insights for building your digital presence. Let's get started!
+    **Euripides** helps you explore who you are and craft actionable insights to build an authentic digital presence. Let’s start your journey.
     """)
 
     # Collect user's preferred name
@@ -31,59 +31,65 @@ def welcome_section():
     )
     st.session_state["user_profile"]["goal"] = user_goal
 
-    # Collect user's energy level
+    # Collect user's energy level with dynamic feedback
     energy_level = st.slider(
         "How are you feeling today? (1 = Low Energy, 10 = High Energy)",
         min_value=1,
         max_value=10,
         value=5,
     )
+    energy_feedback = "Feeling energetic!" if energy_level > 7 else (
+        "Let's take it easy today." if energy_level < 4 else "Ready to dive in!"
+    )
+    st.markdown(f"**Feedback:** {energy_feedback}")
     st.session_state["user_profile"]["energy"] = energy_level
 
-    # Navigation to next section
-    if st.button("Start Exploration"):
-        st.session_state["current_section"] = "exploration"
+    # CTA: Start Talking to Euripides
+    if st.button("Start Talking to Euripides"):
+        st.session_state["current_section"] = "chat"
         st.session_state["conversation"] = [
-            {"role": "assistant", "content": "Welcome! Let’s start by understanding more about you. What values guide your decisions?"}
+            {"role": "assistant", "content": f"Hi {user_name}! I'm Euripides. Let's start with what values guide your decisions?"}
         ]
+        st.experimental_rerun()
 
-# --- GPT Conversational Section ---
-def conversational_section():
-    st.title("Exploration")
-    st.subheader("Let’s explore who you are, one step at a time.")
+# --- Chat Interface Section ---
+def chat_interface():
+    st.title("Euripides: Your Digital Presence Assistant")
+    st.markdown("Chat with Euripides to uncover insights about your passions, goals, and professional identity.")
 
-    # Display conversation history
-    for msg in st.session_state["conversation"]:
-        if msg["role"] == "assistant":
-            st.markdown(f"**Euripides:** {msg['content']}")
+    # Display chat history
+    for message in st.session_state["conversation"]:
+        if message["role"] == "assistant":
+            st.markdown(f"**Euripides:** {message['content']}")
         else:
-            st.markdown(f"**You:** {msg['content']}")
+            st.markdown(f"**You:** {message['content']}")
 
-    # User input
-    user_input = st.text_input("Your response:", key="user_input")
+    # Input box for user response
+    user_input = st.text_input("Type your message here:", key="user_input")
 
     if st.button("Send"):
         if user_input.strip():
-            # Append user input to conversation
+            # Add user message to conversation history
             st.session_state["conversation"].append({"role": "user", "content": user_input})
 
-            # Send updated conversation to GPT
+            # Send the conversation to GPT for a response
             with st.spinner("Euripides is thinking..."):
                 response = openai.ChatCompletion.create(
                     model="gpt-4",
                     messages=[
-                        {"role": "system", "content": "You are Euripides, a conversational assistant helping users explore their identity, passions, and goals."},
-                        *st.session_state["conversation"],  # Include the full conversation so far
+                        {"role": "system", "content": "You are Euripides, a conversational assistant helping users explore their identity and passions to create a personal brand."},
+                        *st.session_state["conversation"],  # Include the full conversation
                     ]
                 )
                 gpt_reply = response["choices"][0]["message"]["content"]
 
-            # Append GPT response to conversation
+            # Add GPT response to conversation history
             st.session_state["conversation"].append({"role": "assistant", "content": gpt_reply})
 
-            # Check if user is ready to proceed to Insights
+            # Transition to Insights if GPT indicates readiness
             if "ready for insights" in gpt_reply.lower():
                 st.session_state["current_section"] = "insights"
+                st.experimental_rerun()
 
 # --- Insights Section ---
 def insights_section():
@@ -113,7 +119,7 @@ def insights_section():
 # --- Main App Logic ---
 if st.session_state["current_section"] == "welcome":
     welcome_section()
-elif st.session_state["current_section"] == "exploration":
-    conversational_section()
+elif st.session_state["current_section"] == "chat":
+    chat_interface()
 elif st.session_state["current_section"] == "insights":
     insights_section()
