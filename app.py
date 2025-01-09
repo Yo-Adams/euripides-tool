@@ -46,11 +46,11 @@ def welcome_section():
 
     # CTA: Start Talking to Euripides
     if st.button("Start Talking to Euripides"):
+        # Set the next section in session state
         st.session_state["current_section"] = "chat"
         st.session_state["conversation"] = [
             {"role": "assistant", "content": f"Hi {user_name}! I'm Euripides. Let's start with what values guide your decisions?"}
         ]
-        st.experimental_rerun()
 
 # --- Chat Interface Section ---
 def chat_interface():
@@ -89,7 +89,6 @@ def chat_interface():
             # Transition to Insights if GPT indicates readiness
             if "ready for insights" in gpt_reply.lower():
                 st.session_state["current_section"] = "insights"
-                st.experimental_rerun()
 
 # --- Insights Section ---
 def insights_section():
