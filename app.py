@@ -2,7 +2,7 @@ import streamlit as st
 import openai
 
 # --- Configure OpenAI API Key ---
-openai.api_key = st.secrets "OPENAI_API_KEY"
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # --- Initialize Session State ---
 if "current_section" not in st.session_state:
