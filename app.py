@@ -2,7 +2,7 @@ import streamlit as st
 import openai
 
 # --- Configure OpenAI API Key (Hardcoded) ---
-openai.api_key = "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"
+openai.api_key = "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"
 
 # --- Initialize Session State ---
 if "current_section" not in st.session_state:
