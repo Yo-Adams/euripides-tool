@@ -2,15 +2,15 @@ import streamlit as st
 import openai
 
 # --- Configure OpenAI API Key (Hardcoded) ---
-openai.api_key = "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"
+openai.api_key = "your-new-api-key"
 
 # --- Initialize Session State ---
 if "current_section" not in st.session_state:
     st.session_state["current_section"] = "welcome"
 if "conversation" not in st.session_state:
-    st.session_state["conversation"] = []  # Stores conversation history
+    st.session_state["conversation"] = []  # Stores chat history
 if "user_profile" not in st.session_state:
-    st.session_state["user_profile"] = {}  # Stores user responses
+    st.session_state["user_profile"] = {}  # Stores user data
 
 # --- Welcome Section ---
 def welcome_section():
@@ -46,7 +46,6 @@ def welcome_section():
 
     # CTA: Start Talking to Euripides
     if st.button("Start Talking to Euripides"):
-        # Set the next section in session state
         st.session_state["current_section"] = "chat"
         st.session_state["conversation"] = [
             {"role": "assistant", "content": f"Hi {user_name}! I'm Euripides. Let's start with what values guide your decisions?"}
@@ -73,22 +72,28 @@ def chat_interface():
             st.session_state["conversation"].append({"role": "user", "content": user_input})
 
             # Send the conversation to GPT for a response
-            with st.spinner("Euripides is thinking..."):
-                response = openai.ChatCompletion.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You are Euripides, a conversational assistant helping users explore their identity and passions to create a personal brand."},
-                        *st.session_state["conversation"],  # Include the full conversation
-                    ]
-                )
-                gpt_reply = response["choices"][0]["message"]["content"]
+            try:
+                with st.spinner("Euripides is thinking..."):
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You are Euripides, a conversational assistant helping users explore their identity and passions to create a personal brand."},
+                            *st.session_state["conversation"],  # Include the full conversation
+                        ]
+                    )
+                    gpt_reply = response["choices"][0]["message"]["content"]
 
-            # Add GPT response to conversation history
-            st.session_state["conversation"].append({"role": "assistant", "content": gpt_reply})
+                # Add GPT response to conversation history
+                st.session_state["conversation"].append({"role": "assistant", "content": gpt_reply})
 
-            # Transition to Insights if GPT indicates readiness
-            if "ready for insights" in gpt_reply.lower():
-                st.session_state["current_section"] = "insights"
+                # Transition to Insights if GPT indicates readiness
+                if "ready for insights" in gpt_reply.lower():
+                    st.session_state["current_section"] = "insights"
+                    st.experimental_rerun()
+            except openai.error.AuthenticationError as e:
+                st.error("Authentication Error: Please check your API key.")
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
 
 # --- Insights Section ---
 def insights_section():
