@@ -7,9 +7,10 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 # --- Initialize Session State ---
 if "current_section" not in st.session_state:
     st.session_state["current_section"] = "welcome"
-
-if "user_data" not in st.session_state:
-    st.session_state["user_data"] = {}
+if "conversation" not in st.session_state:
+    st.session_state["conversation"] = []  # Stores GPT conversation
+if "user_profile" not in st.session_state:
+    st.session_state["user_profile"] = {}  # Stores user responses (profile data)
 
 # --- Welcome Section ---
 def welcome_section():
@@ -21,74 +22,79 @@ def welcome_section():
 
     # Collect user's preferred name
     user_name = st.text_input("What should I call you?", placeholder="Enter your name")
-    st.session_state["user_data"]["name"] = user_name
+    st.session_state["user_profile"]["name"] = user_name
+
+    # Collect user's reason for using the tool
+    user_goal = st.radio(
+        "What brings you here today?",
+        options=["Explore who I am", "Build my digital presence", "Discover my audience", "Other"],
+    )
+    st.session_state["user_profile"]["goal"] = user_goal
+
+    # Collect user's energy level
+    energy_level = st.slider(
+        "How are you feeling today? (1 = Low Energy, 10 = High Energy)",
+        min_value=1,
+        max_value=10,
+        value=5,
+    )
+    st.session_state["user_profile"]["energy"] = energy_level
 
     # Navigation to next section
     if st.button("Start Exploration"):
         st.session_state["current_section"] = "exploration"
 
-# --- Exploration Section ---
+# --- GPT Conversational Exploration Section ---
 def exploration_section():
     st.title("Exploration")
-    st.subheader("Let’s dive into who you are and what you care about!")
+    st.subheader("Let’s explore who you are, one step at a time.")
 
-    # Collect Core Identity
-    st.session_state["user_data"]["core_identity"] = st.text_area(
-        "What values guide your decisions?",
-        placeholder="E.g., authenticity, creativity, community..."
-    )
+    # Get previous messages
+    messages = st.session_state["conversation"]
 
-    # Collect Passions
-    st.session_state["user_data"]["passions"] = st.text_area(
-        "What activities or topics make you lose track of time?",
-        placeholder="E.g., photography, cooking, hiking..."
-    )
+    # Display conversation history
+    for msg in messages:
+        if msg["role"] == "assistant":
+            st.markdown(f"**Euripides:** {msg['content']}")
+        else:
+            st.markdown(f"**You:** {msg['content']}")
 
-    # Collect Professional Background
-    st.session_state["user_data"]["professional"] = st.text_area(
-        "Tell me about your current role and the skills you bring.",
-        placeholder="E.g., marketing director, skilled in storytelling and analytics..."
-    )
+    # User input
+    user_input = st.text_input("Your response:", key="user_input")
 
-    # Navigation to Insights Section
-    if st.button("Generate Insights"):
-        st.session_state["current_section"] = "insights"
+    if st.button("Send"):
+        if user_input:
+            # Append user input to conversation
+            messages.append({"role": "user", "content": user_input})
+            st.session_state["conversation"] = messages
 
-# --- Insights Section ---
+            # Send to GPT
+            with st.spinner("Euripides is thinking..."):
+                response = openai.ChatCompletion.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are Euripides, a personal branding assistant. Help users explore their identity, passions, and professional goals."},
+                        *messages,  # Send full conversation context
+                    ]
+                )
+                gpt_reply = response["choices"][0]["message"]["content"]
+
+            # Append GPT response to conversation
+            messages.append({"role": "assistant", "content": gpt_reply})
+            st.session_state["conversation"] = messages
+
+# --- Insights Section Placeholder ---
 def insights_section():
     st.title("Insights")
     st.subheader("Here’s what we’ve uncovered about you!")
 
-    # Format user data for GPT
-    exploration_data = f"""
-    Name: {st.session_state['user_data'].get('name', 'Anonymous')}
-    Core Identity: {st.session_state['user_data'].get('core_identity', 'Not provided')}
-    Passions: {st.session_state['user_data'].get('passions', 'Not provided')}
-    Professional Background: {st.session_state['user_data'].get('professional', 'Not provided')}
-    """
+    # Placeholder for generating insights
+    st.markdown("Insights will be generated here based on your exploration data.")
 
-    # System prompt for GPT
-    system_prompt = """
-    You are Euripides, a personal branding assistant. Based on the user data provided, summarize their persona and suggest actionable strategies for building their digital presence.
-    """
-
-    # Send data to GPT
-    with st.spinner("Generating insights..."):
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": exploration_data},
-            ]
-        )
-        gpt_reply = response["choices"][0]["message"]["content"]
-
-    # Display GPT-generated insights
-    st.markdown(gpt_reply)
-
-    # Offer next steps
     if st.button("Restart"):
         st.session_state["current_section"] = "welcome"
+        st.session_state["conversation"] = []
+        st.session_state["user_profile"] = {}
 
 # --- Main App Logic ---
 if st.session_state["current_section"] == "welcome":
