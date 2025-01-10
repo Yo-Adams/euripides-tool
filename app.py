@@ -8,7 +8,7 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "system", "content": (
-            "You are Euripides, a GPT-driven assistant designed to help users explore their identity, "
+            "You are Euripides, a conversational assistant designed to help users explore their identity, "
             "passions, and professional goals. Guide the user through structured sections, collecting "
             "information about their identity, passions, professional background, dreams, authenticity, "
             "audience alignment, time use, and leadership. Focus on gathering and clarifying user responses. "
@@ -19,112 +19,102 @@ if "messages" not in st.session_state:
 if "current_section" not in st.session_state:
     st.session_state.current_section = "welcome"  # Start with the welcome section
 if "user_profile" not in st.session_state:
-    st.session_state.user_profile = {}  # Store gathered user information
+    st.session_state.user_profile = {}
 
-# --- Exploration Questions for Each Section ---
-questions = {
-    "identity": [
-        "How do you perceive yourself, and how do you think others perceive you?",
-        "What are some of your core beliefs or values that shape how you view the world?",
-    ],
-    "passions": [
-        "What activities or hobbies do you enjoy in your free time?",
-        "Are there any guilty pleasures or secret passions you have?",
-    ],
-    "professional": [
-        "What is your current or most recent job? What skills does it involve?",
-        "Are there specific skills or strengths you want to highlight in your personal brand?",
-    ],
-    "dreams": [
-        "What is your ultimate goal or dream in life?",
-        "What kind of impact would you like to have on the world?",
-    ],
-    "authenticity": [
-        "Are there lived experiences or challenges you’ve faced that shape your story?",
-        "What feels authentic for you to share with others?",
-    ],
-    "audience": [
-        "Who do you want to connect with or serve through your digital presence?",
-        "Are there communities you’re already part of or want to engage with more deeply?",
-    ],
-    "time": [
-        "How much time do you have to dedicate to creating content or engaging online?",
-        "Do you prefer creating text, video, or graphic content?",
-    ],
-    "leadership": [
-        "What areas do you feel most confident or naturally take charge in?",
-        "Are there areas where you feel you need more support or guidance?"
-    ],
-}
+# --- Function to Handle Chat Messages ---
+def add_message(role, content):
+    st.session_state.messages.append({"role": role, "content": content})
 
-# --- Section Handling Function ---
-def handle_section():
-    section = st.session_state.current_section
-    if section == "welcome":
-        st.title("Welcome to Euripides!")
-        st.subheader("Your personal Deus Ex Machina for crafting your digital presence.")
-        st.markdown("Euripides will guide you through an exploration of your identity, passions, and goals.")
-        
-        user_name = st.text_input("What should I call you?", placeholder="Enter your name")
-        reason = st.selectbox(
-            "What brings you here today?",
-            ["Explore who I am", "Build my digital presence", "Discover my audience", "Other"]
+# --- Generate GPT Response ---
+def get_gpt_response():
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=st.session_state.messages,
+            temperature=0.7,
+            max_tokens=300
         )
-        energy_level = st.slider("How are you feeling right now? (1 = Low energy, 5 = High energy)", 1, 5, 3)
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"An error occurred: {e}"
 
-        if st.button("Start Talking to Euripides"):
-            st.session_state.user_profile["name"] = user_name
-            st.session_state.user_profile["reason"] = reason
-            st.session_state.user_profile["energy_level"] = energy_level
-            st.session_state.current_section = "identity"  # Move to the next section
-            st.write("Navigating to the Identity section...")
+# --- Chat Interface ---
+st.title("Welcome to Euripides!")
+st.markdown("Your personal Deus Ex Machina for crafting your digital presence.")
+
+if st.session_state.current_section == "welcome":
+    # Welcome Screen
+    if "welcome_shown" not in st.session_state:
+        add_message("assistant", "Welcome! What should I call you?")
+        st.session_state.welcome_shown = True
+
+    user_input = st.chat_input("Type your response here...")
+    if user_input:
+        add_message("user", user_input)
+        if "name" not in st.session_state.user_profile:
+            st.session_state.user_profile["name"] = user_input
+            add_message("assistant", f"Nice to meet you, {user_input}! What brings you here today?")
+        elif "reason" not in st.session_state.user_profile:
+            st.session_state.user_profile["reason"] = user_input
+            add_message("assistant", "Great! Before we dive in, how are you feeling on a scale of 1 (low energy) to 5 (high energy)?")
+        elif "energy_level" not in st.session_state.user_profile:
+            try:
+                energy = int(user_input)
+                if 1 <= energy <= 5:
+                    st.session_state.user_profile["energy_level"] = energy
+                    add_message("assistant", "Thanks! Let's get started. I'll guide you through some questions.")
+                    st.session_state.current_section = "identity"
+                else:
+                    add_message("assistant", "Please provide a number between 1 and 5.")
+            except ValueError:
+                add_message("assistant", "Please provide a valid number between 1 and 5.")
+
+elif st.session_state.current_section in ["identity", "passions", "professional", "dreams", "authenticity", "audience", "time", "leadership"]:
+    # Exploration Sections
+    questions = {
+        "identity": ["How do you perceive yourself?", "How do others perceive you?"],
+        "passions": ["What are your hobbies or interests?", "Do you have any secret passions?"],
+        "professional": ["What is your current or most recent job?", "What skills do you want to highlight?"],
+        "dreams": ["What is your ultimate goal?", "What impact do you want to have?"],
+        "authenticity": ["What lived experiences shape your story?", "What feels authentic for you to share?"],
+        "audience": ["Who do you want to connect with?", "Are there communities you're already part of?"],
+        "time": ["How much time do you have for creating content?", "Do you prefer creating text, video, or graphics?"],
+        "leadership": ["What areas do you feel most confident in?", "Where do you need more support?"],
+    }
+
+    section = st.session_state.current_section
+    if "question_index" not in st.session_state:
+        st.session_state.question_index = 0
+
+    current_questions = questions[section]
+    if st.session_state.question_index < len(current_questions):
+        current_question = current_questions[st.session_state.question_index]
+        add_message("assistant", current_question)
+        user_input = st.chat_input("Type your response here...")
+        if user_input:
+            add_message("user", user_input)
+            st.session_state.user_profile.setdefault(section, []).append(user_input)
+            st.session_state.question_index += 1
     else:
-        # Display current section questions
-        st.subheader(f"Let's talk about {section.capitalize()}")
-        for question in questions.get(section, []):
-            st.write(question)
-            user_response = st.text_input(f"Your response to: {question}", key=f"{section}_{question}")
-            if user_response:
-                st.session_state.user_profile.setdefault(section, []).append(user_response)
-        
-        if st.button("Next Section"):
-            # Move to the next section
-            sections = list(questions.keys())
-            current_index = sections.index(section)
-            if current_index + 1 < len(sections):
-                st.session_state.current_section = sections[current_index + 1]
-                st.write(f"Navigating to {sections[current_index + 1].capitalize()} section...")
-            else:
-                st.session_state.current_section = "insights"  # Move to insights after exploration
-                st.write("Navigating to Insights...")
+        # Move to the next section
+        st.session_state.question_index = 0
+        sections = list(questions.keys())
+        current_index = sections.index(section)
+        if current_index + 1 < len(sections):
+            st.session_state.current_section = sections[current_index + 1]
+            add_message("assistant", f"Let's move on to {sections[current_index + 1].capitalize()}.")
+        else:
+            st.session_state.current_section = "insights"
+            add_message("assistant", "Thanks for sharing! Let's review what we've learned.")
 
-# --- Insights Generation Function ---
-def generate_insights():
-    st.title("Euripides Insights")
-    st.markdown("Here’s what I’ve learned about you and some tailored recommendations:")
-    
-    # Compile the user profile into a summary for the GPT
+elif st.session_state.current_section == "insights":
+    # Insights Section
+    add_message("assistant", "Generating insights based on what you've shared...")
     user_summary = "\n".join([f"{key.capitalize()}: {value}" for key, value in st.session_state.user_profile.items()])
-    
-    with st.spinner("Generating insights..."):
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant summarizing insights."},
-                    {"role": "user", "content": user_summary},
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            insights = response.choices[0].message["content"]
-            st.success("Here are your insights:")
-            st.write(insights)
-        except Exception as e:
-            st.error(f"An error occurred while generating insights: {e}")
+    insights = get_gpt_response()
+    add_message("assistant", insights)
 
-# --- Main App Logic ---
-if st.session_state.current_section == "insights":
-    generate_insights()
-else:
-    handle_section()
+# Display Chat Messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
