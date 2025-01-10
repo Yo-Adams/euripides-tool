@@ -77,7 +77,7 @@ def handle_section():
             st.session_state.user_profile["reason"] = reason
             st.session_state.user_profile["energy_level"] = energy_level
             st.session_state.current_section = "identity"  # Move to the next section
-            st.experimental_rerun()
+            st.write("Navigating to the Identity section...")
     else:
         # Display current section questions
         st.subheader(f"Let's talk about {section.capitalize()}")
@@ -93,9 +93,10 @@ def handle_section():
             current_index = sections.index(section)
             if current_index + 1 < len(sections):
                 st.session_state.current_section = sections[current_index + 1]
+                st.write(f"Navigating to {sections[current_index + 1].capitalize()} section...")
             else:
                 st.session_state.current_section = "insights"  # Move to insights after exploration
-            st.experimental_rerun()
+                st.write("Navigating to Insights...")
 
 # --- Insights Generation Function ---
 def generate_insights():
