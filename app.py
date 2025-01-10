@@ -2,28 +2,29 @@ import streamlit as st
 import openai
 import time
 
-# Configure OpenAI API Key
+# --- OpenAI API Configuration ---
 openai.api_key = st.secrets.get("OPENAI_API_KEY")
 
-# System Prompt for Euripides
+# --- System Prompt for Euripides ---
 SYSTEM_PROMPT = """
 You are Euripides, a highly specialized and insightful conversational assistant. Your purpose is to help users explore their identity, passions, and professional goals in a conversational manner to craft actionable insights for their digital presence. 
 Your workflow includes three phases: Welcome, Exploration, and Insights. During Exploration, ask adaptive, tailored questions across eight sections: Identity, Passions, Professional Background, Dreams, Authenticity, Audience, Time Use, and Leadership. Save insights for the final phase and focus on gathering detailed user input.
 Maintain a supportive and conversational tone. If users provide minimal or hesitant responses, encourage elaboration. Redirect problematic or negative inputs constructively. Always personalize your responses using the user's name.
 """
 
-# Initialize session state
+# --- Initialize Session State ---
 if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "system", "content": SYSTEM_PROMPT}]
 if "user_name" not in st.session_state:
     st.session_state["user_name"] = ""
 
-# Typing effect function
+# --- Typing Effect Function ---
 def display_typing_effect(response_text):
+    """Simulates typing effect for Euripides' responses."""
     typing_display = ""
     for char in response_text:
         typing_display += char
-        time.sleep(0.03)  # Simulates typing speed
+        time.sleep(0.03)  # Simulate typing speed
         st.markdown(
             f"""
             <div style="background-color: #f0f4c3; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
@@ -33,11 +34,11 @@ def display_typing_effect(response_text):
             unsafe_allow_html=True,
         )
 
-# App title and introduction
+# --- App Title and Introduction ---
 st.title("Euripides: Your Personal Deus Ex Machina")
 st.subheader("Let's explore who you are and craft actionable insights for your digital presence!")
 
-# Welcome phase
+# --- Welcome Phase ---
 if not st.session_state["user_name"]:
     st.markdown("**Welcome to Euripides! Let's start by getting to know you.**")
     st.session_state["user_name"] = st.text_input("What should I call you?")
@@ -67,18 +68,20 @@ if not st.session_state["user_name"]:
         )
         st.experimental_rerun()
 
-# Chat interface
+# --- Chat Interface ---
 st.subheader(f"Chat with Euripides, {st.session_state['user_name']}")
 
+# User Input
 user_input = st.text_area(
-    "You:", placeholder="Type your message here...", height=50, key="input"
+    "You:", placeholder="Type your message here...", height=50, key="chat_input"
 )
-if st.button("Send"):
-    if user_input:
-        # Add user input to session
+
+if st.button("Send", key="send_button"):
+    if user_input.strip():  # Check if input is not empty
+        # Add user input to session state
         st.session_state["messages"].append({"role": "user", "content": user_input})
 
-        # API Call
+        # Call OpenAI API
         with st.spinner("Euripides is thinking..."):
             response = openai.ChatCompletion.create(
                 model="gpt-4",
@@ -96,7 +99,7 @@ if st.button("Send"):
         # Display assistant reply
         display_typing_effect(assistant_reply)
 
-# Display conversation history
+# --- Display Conversation History ---
 for message in st.session_state["messages"]:
     if message["role"] == "user":
         st.markdown(f"""
