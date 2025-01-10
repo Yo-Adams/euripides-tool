@@ -24,7 +24,7 @@ def display_typing_effect(response_text):
     typing_display = ""
     for char in response_text:
         typing_display += char
-        time.sleep(0.03)  # Simulate typing speed
+        time.sleep(0.03)
         st.markdown(
             f"""
             <div style="background-color: #f0f4c3; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
@@ -59,7 +59,6 @@ if not st.session_state["user_name"]:
     )
 
     if st.button("Start Talking to Euripides"):
-        # Store initial user data in session state
         st.session_state["messages"].append(
             {
                 "role": "assistant",
@@ -73,31 +72,31 @@ st.subheader(f"Chat with Euripides, {st.session_state['user_name']}")
 
 # User Input
 user_input = st.text_area(
-    "You:", placeholder="Type your message here...", height=50, key="chat_input"
+    "You:", 
+    placeholder="Type your message here...", 
+    height=100,  # Updated height to meet minimum requirements
+    key="chat_input"
 )
 
 if st.button("Send", key="send_button"):
-    if user_input.strip():  # Check if input is not empty
-        # Add user input to session state
+    if user_input.strip():
         st.session_state["messages"].append({"role": "user", "content": user_input})
 
         # Call OpenAI API
-        with st.spinner("Euripides is thinking..."):
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=st.session_state["messages"],
-                temperature=0.7,
-                max_tokens=150,
-            )
+        try:
+            with st.spinner("Euripides is thinking..."):
+                response = openai.ChatCompletion.create(
+                    model="gpt-4",
+                    messages=st.session_state["messages"],
+                    temperature=0.7,
+                    max_tokens=150,
+                )
+            assistant_reply = response["choices"][0]["message"]["content"]
+            st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
+            display_typing_effect(assistant_reply)
 
-        # Get assistant's reply
-        assistant_reply = response["choices"][0]["message"]["content"]
-
-        # Save assistant's reply
-        st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
-
-        # Display assistant reply
-        display_typing_effect(assistant_reply)
+        except Exception as e:
+            st.error(f"Error: {e}")
 
 # --- Display Conversation History ---
 for message in st.session_state["messages"]:
