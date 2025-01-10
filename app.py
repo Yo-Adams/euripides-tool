@@ -2,35 +2,77 @@ import streamlit as st
 import openai
 import time
 
-# Configure API Key
+# Configure OpenAI API Key
 openai.api_key = st.secrets.get("OPENAI_API_KEY")
 
-# System Prompt
+# System Prompt for Euripides
 SYSTEM_PROMPT = """
-You are Euripides, a highly specialized conversational assistant...
+You are Euripides, a highly specialized and insightful conversational assistant. Your purpose is to help users explore their identity, passions, and professional goals in a conversational manner to craft actionable insights for their digital presence. 
+Your workflow includes three phases: Welcome, Exploration, and Insights. During Exploration, ask adaptive, tailored questions across eight sections: Identity, Passions, Professional Background, Dreams, Authenticity, Audience, Time Use, and Leadership. Save insights for the final phase and focus on gathering detailed user input.
+Maintain a supportive and conversational tone. If users provide minimal or hesitant responses, encourage elaboration. Redirect problematic or negative inputs constructively. Always personalize your responses using the user's name.
 """
 
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "system", "content": SYSTEM_PROMPT}]
+if "user_name" not in st.session_state:
+    st.session_state["user_name"] = ""
 
-# Define typing effect
+# Typing effect function
 def display_typing_effect(response_text):
     typing_display = ""
     for char in response_text:
         typing_display += char
-        st.markdown(f"""
-        <div style="background-color: #f0f4c3; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
-            <b>Euripides is typing...</b><br>{typing_display}
-        </div>
-        """, unsafe_allow_html=True)
-        time.sleep(0.03)
+        time.sleep(0.03)  # Simulates typing speed
+        st.markdown(
+            f"""
+            <div style="background-color: #f0f4c3; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
+                <b>Euripides is typing...</b><br>{typing_display}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+# App title and introduction
+st.title("Euripides: Your Personal Deus Ex Machina")
+st.subheader("Let's explore who you are and craft actionable insights for your digital presence!")
+
+# Welcome phase
+if not st.session_state["user_name"]:
+    st.markdown("**Welcome to Euripides! Let's start by getting to know you.**")
+    st.session_state["user_name"] = st.text_input("What should I call you?")
+    user_goal = st.selectbox(
+        "Why are you here today?",
+        [
+            "Explore who I am",
+            "Build my digital presence",
+            "Discover my audience",
+            "Other",
+        ],
+    )
+    energy_level = st.slider(
+        "How much energy do you have for this conversation?",
+        min_value=1,
+        max_value=10,
+        value=7,
+    )
+
+    if st.button("Start Talking to Euripides"):
+        # Store initial user data in session state
+        st.session_state["messages"].append(
+            {
+                "role": "assistant",
+                "content": f"Great to meet you, {st.session_state['user_name']}! You want to {user_goal.lower()} and have an energy level of {energy_level}/10. Let's begin!",
+            }
+        )
+        st.experimental_rerun()
 
 # Chat interface
-st.title("Euripides: Your Personal Deus Ex Machina")
-st.subheader("Chat with Euripides")
+st.subheader(f"Chat with Euripides, {st.session_state['user_name']}")
 
-user_input = st.text_area("You:", placeholder="Type your message here...", height=50)
+user_input = st.text_area(
+    "You:", placeholder="Type your message here...", height=50, key="input"
+)
 if st.button("Send"):
     if user_input:
         # Add user input to session
@@ -48,15 +90,23 @@ if st.button("Send"):
         # Get assistant's reply
         assistant_reply = response["choices"][0]["message"]["content"]
 
-        # Simulate typing effect
-        display_typing_effect(assistant_reply)
-
         # Save assistant's reply
         st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
 
-# Display conversation
+        # Display assistant reply
+        display_typing_effect(assistant_reply)
+
+# Display conversation history
 for message in st.session_state["messages"]:
     if message["role"] == "user":
-        st.markdown(f"**You:** {message['content']}")
+        st.markdown(f"""
+        <div style="background-color: #e8f5e9; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%;">
+            <b>You:</b> {message['content']}
+        </div>
+        """, unsafe_allow_html=True)
     elif message["role"] == "assistant":
-        st.markdown(f"**Euripides:** {message['content']}")
+        st.markdown(f"""
+        <div style="background-color: #f0f4c3; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
+            <b>Euripides:</b> {message['content']}
+        </div>
+        """, unsafe_allow_html=True)
