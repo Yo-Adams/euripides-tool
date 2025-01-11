@@ -19,6 +19,10 @@ if "user_name" not in st.session_state:
     st.session_state["user_name"] = ""
 if "initialized" not in st.session_state:
     st.session_state["initialized"] = False
+if "user_goal" not in st.session_state:
+    st.session_state["user_goal"] = ""
+if "energy_level" not in st.session_state:
+    st.session_state["energy_level"] = 7
 
 # --- Typing Effect Function ---
 def display_typing_effect(response_text):
@@ -41,10 +45,10 @@ st.title("Euripides: Your Personal Deus Ex Machina")
 st.subheader("Let's explore who you are and craft actionable insights for your digital presence!")
 
 # --- Welcome Phase ---
-if not st.session_state["user_name"]:
+if not st.session_state["initialized"]:
     st.markdown("**Welcome to Euripides! Let's start by getting to know you.**")
-    st.session_state["user_name"] = st.text_input("What should I call you?")
-    user_goal = st.selectbox(
+    st.session_state["user_name"] = st.text_input("What should I call you?", key="name_input")
+    st.session_state["user_goal"] = st.selectbox(
         "Why are you here today?",
         [
             "Explore who I am",
@@ -52,12 +56,14 @@ if not st.session_state["user_name"]:
             "Discover my audience",
             "Other",
         ],
+        key="goal_input",
     )
-    energy_level = st.slider(
+    st.session_state["energy_level"] = st.slider(
         "How much energy do you have for this conversation?",
         min_value=1,
         max_value=10,
         value=7,
+        key="energy_slider",
     )
 
     if st.button("Start Talking to Euripides"):
@@ -65,7 +71,7 @@ if not st.session_state["user_name"]:
         st.session_state["messages"].append(
             {
                 "role": "assistant",
-                "content": f"Great to meet you, {st.session_state['user_name']}! You want to {user_goal.lower()} and have an energy level of {energy_level}/10. Let's begin!",
+                "content": f"Great to meet you, {st.session_state['user_name']}! You want to {st.session_state['user_goal'].lower()} and have an energy level of {st.session_state['energy_level']}/10. Let's begin!",
             }
         )
         # Initiate the first question from Euripides
