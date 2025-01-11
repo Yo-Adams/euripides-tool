@@ -17,10 +17,12 @@ if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "system", "content": SYSTEM_PROMPT}]
 if "user_name" not in st.session_state:
     st.session_state["user_name"] = ""
+if "initialized" not in st.session_state:
+    st.session_state["initialized"] = False
 
 # --- Typing Effect Function ---
 def display_typing_effect(response_text):
-    """Simulates typing effect for Euripides' responses."""
+    """Displays typing effect for the assistant's responses."""
     typing_display = ""
     for char in response_text:
         typing_display += char
@@ -59,56 +61,66 @@ if not st.session_state["user_name"]:
     )
 
     if st.button("Start Talking to Euripides"):
+        # Add user goal and energy level to the conversation
         st.session_state["messages"].append(
             {
                 "role": "assistant",
                 "content": f"Great to meet you, {st.session_state['user_name']}! You want to {user_goal.lower()} and have an energy level of {energy_level}/10. Let's begin!",
             }
         )
+        # Initiate the first question from Euripides
+        st.session_state["messages"].append(
+            {
+                "role": "assistant",
+                "content": "To start, tell me what excites you the most about using this tool?",
+            }
+        )
+        st.session_state["initialized"] = True
         st.experimental_rerun()
 
 # --- Chat Interface ---
-st.subheader(f"Chat with Euripides, {st.session_state['user_name']}")
+if st.session_state["initialized"]:
+    st.subheader(f"Chat with Euripides, {st.session_state['user_name']}")
 
-# User Input
-user_input = st.text_area(
-    "You:", 
-    placeholder="Type your message here...", 
-    height=100,
-    key="chat_input"
-)
+    # User Input
+    user_input = st.text_area(
+        "You:", 
+        placeholder="Type your message here...", 
+        height=100,
+        key="chat_input"
+    )
 
-if st.button("Send", key="send_button"):
-    if user_input.strip():
-        st.session_state["messages"].append({"role": "user", "content": user_input})
+    if st.button("Send", key="send_button"):
+        if user_input.strip():
+            st.session_state["messages"].append({"role": "user", "content": user_input})
 
-        # Call OpenAI API
-        try:
-            with st.spinner("Euripides is thinking..."):
-                response = openai.ChatCompletion.create(
-                    model="gpt-4",
-                    messages=st.session_state["messages"],
-                    temperature=0.7,
-                    max_tokens=150,
-                )
-            assistant_reply = response["choices"][0]["message"]["content"]
-            st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
-            display_typing_effect(assistant_reply)
+            # Call OpenAI API
+            try:
+                with st.spinner("Euripides is thinking..."):
+                    response = openai.ChatCompletion.create(
+                        model="gpt-4",
+                        messages=st.session_state["messages"],
+                        temperature=0.7,
+                        max_tokens=150,
+                    )
+                assistant_reply = response["choices"][0]["message"]["content"]
+                st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
+                display_typing_effect(assistant_reply)
 
-        except Exception as e:
-            st.error(f"Error: {e}")
+            except Exception as e:
+                st.error(f"Error: {e}")
 
-# --- Display Conversation History ---
-for message in st.session_state["messages"]:
-    if message["role"] == "user":
-        st.markdown(f"""
-        <div style="background-color: #d9f0fc; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%;">
-            <b>You:</b> {message['content']}
-        </div>
-        """, unsafe_allow_html=True)
-    elif message["role"] == "assistant":
-        st.markdown(f"""
-        <div style="background-color: #fff5ba; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
-            <b>Euripides:</b> {message['content']}
-        </div>
-        """, unsafe_allow_html=True)
+    # --- Display Conversation History ---
+    for message in st.session_state["messages"]:
+        if message["role"] == "user":
+            st.markdown(f"""
+            <div style="background-color: #d9f0fc; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%;">
+                <b>You:</b> {message['content']}
+            </div>
+            """, unsafe_allow_html=True)
+        elif message["role"] == "assistant":
+            st.markdown(f"""
+            <div style="background-color: #fff5ba; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
+                <b>Euripides:</b> {message['content']}
+            </div>
+            """, unsafe_allow_html=True)
