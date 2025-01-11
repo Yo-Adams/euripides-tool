@@ -70,44 +70,46 @@ if not st.session_state["initialized"]:
 if st.session_state["initialized"]:
     st.subheader(f"Chat with Euripides, {st.session_state['user_name']}")
 
-    # User Input
-    user_input = st.text_area(
-        "You:", 
-        placeholder="Type your message here...", 
-        height=100,
-        key="chat_input"
-    )
-
-    if st.button("Send", key="send_button"):
-        if user_input.strip():
-            st.session_state["messages"].append({"role": "user", "content": user_input})
-
-            # Call OpenAI API
-            try:
-                with st.spinner("Euripides is thinking..."):
-                    response = openai.ChatCompletion.create(
-                        model="gpt-4",
-                        messages=st.session_state["messages"],
-                        temperature=0.7,
-                        max_tokens=150,
-                    )
-                assistant_reply = response["choices"][0]["message"]["content"]
-                st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
-
-            except Exception as e:
-                st.error(f"Error: {e}")
-
     # --- Display Conversation History ---
+    chat_container = st.container()
     for message in st.session_state["messages"]:
         if message["role"] == "user":
-            st.markdown(f"""
+            chat_container.markdown(f"""
             <div style="background-color: #d9f0fc; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%;">
                 <b>You:</b> {message['content']}
             </div>
             """, unsafe_allow_html=True)
         elif message["role"] == "assistant":
-            st.markdown(f"""
+            chat_container.markdown(f"""
             <div style="background-color: #fff5ba; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
                 <b>Euripides:</b> {message['content']}
             </div>
             """, unsafe_allow_html=True)
+
+    # --- User Input Below Chat History ---
+    with st.container():
+        user_input = st.text_area(
+            "You:", 
+            placeholder="Type your message here...", 
+            height=100,
+            key="chat_input"
+        )
+
+        if st.button("Send", key="send_button"):
+            if user_input.strip():
+                st.session_state["messages"].append({"role": "user", "content": user_input})
+
+                # Call OpenAI API
+                try:
+                    with st.spinner("Euripides is thinking..."):
+                        response = openai.ChatCompletion.create(
+                            model="gpt-4",
+                            messages=st.session_state["messages"],
+                            temperature=0.7,
+                            max_tokens=150,
+                        )
+                    assistant_reply = response["choices"][0]["message"]["content"]
+                    st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
+
+                except Exception as e:
+                    st.error(f"Error: {e}")
