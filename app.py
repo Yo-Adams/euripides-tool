@@ -24,10 +24,10 @@ def display_typing_effect(response_text):
     typing_display = ""
     for char in response_text:
         typing_display += char
-        time.sleep(0.03)
+        time.sleep(0.02)
         st.markdown(
             f"""
-            <div style="background-color: #f0f4c3; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
+            <div style="background-color: #fff5ba; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
                 <b>Euripides is typing...</b><br>{typing_display}
             </div>
             """,
@@ -74,7 +74,7 @@ st.subheader(f"Chat with Euripides, {st.session_state['user_name']}")
 user_input = st.text_area(
     "You:", 
     placeholder="Type your message here...", 
-    height=100,  # Updated height to meet minimum requirements
+    height=100,
     key="chat_input"
 )
 
@@ -102,13 +102,13 @@ if st.button("Send", key="send_button"):
 for message in st.session_state["messages"]:
     if message["role"] == "user":
         st.markdown(f"""
-        <div style="background-color: #e8f5e9; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%;">
+        <div style="background-color: #d9f0fc; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%;">
             <b>You:</b> {message['content']}
         </div>
         """, unsafe_allow_html=True)
     elif message["role"] == "assistant":
         st.markdown(f"""
-        <div style="background-color: #f0f4c3; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
+        <div style="background-color: #fff5ba; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
             <b>Euripides:</b> {message['content']}
         </div>
         """, unsafe_allow_html=True)
