@@ -82,7 +82,6 @@ if not st.session_state["initialized"]:
             }
         )
         st.session_state["initialized"] = True
-        st.experimental_rerun()
 
 # --- Chat Interface ---
 if st.session_state["initialized"]:
