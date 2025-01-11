@@ -1,6 +1,5 @@
 import streamlit as st
 import openai
-import time
 
 # --- OpenAI API Configuration ---
 openai.api_key = st.secrets.get("OPENAI_API_KEY")
@@ -23,22 +22,6 @@ if "user_goal" not in st.session_state:
     st.session_state["user_goal"] = ""
 if "energy_level" not in st.session_state:
     st.session_state["energy_level"] = 7
-
-# --- Typing Effect Function ---
-def display_typing_effect(response_text):
-    """Displays typing effect for the assistant's responses."""
-    typing_display = ""
-    for char in response_text:
-        typing_display += char
-        time.sleep(0.02)
-        st.markdown(
-            f"""
-            <div style="background-color: #fff5ba; color: #333; padding: 10px; margin: 5px; border-radius: 10px; text-align: left; max-width: 70%; float: right;">
-                <b>Euripides is typing...</b><br>{typing_display}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
 # --- App Title and Introduction ---
 st.title("Euripides: Your Personal Deus Ex Machina")
@@ -110,7 +93,6 @@ if st.session_state["initialized"]:
                     )
                 assistant_reply = response["choices"][0]["message"]["content"]
                 st.session_state["messages"].append({"role": "assistant", "content": assistant_reply})
-                display_typing_effect(assistant_reply)
 
             except Exception as e:
                 st.error(f"Error: {e}")
